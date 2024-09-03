@@ -1,4 +1,32 @@
+
+/* General styles for the body */
+body {
+    font-family: Arial, sans-serif;
+}
+
+/* Make the image smaller */
 img {
-    width: 300px; /* Adjust the width as needed */
-    height: auto; /* Maintains the aspect ratio */
+    width: 300px;
+    height: auto; 
+}
+
+/* Styling for the paragraph */
+p {
+    font-size: 16px;
+}
+
+/* Styling for the link */
+a {
+    color: blue;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Styling for the header */
+h1 {
+    font-size: 32px;
+    color: #d8831397;
 }
