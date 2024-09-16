@@ -1,0 +1,49 @@
+Sawyer Reinig's Midterm
+Also sorry if the lines are off by a few, I tried my best to not have things move around when fixing the errors. 
+
+line 1, should be <!DOCTYPE html>
+line 2, this would be the place to define the language: <html lang="en">
+line 4, two html tags is not ok
+line 7, need to close the <head> tag
+line 9, didn't close h1 tag
+line 11, didn't open paragraph tag <p>
+line 13, you gotta pick a list type, this tag is different than the closing tag. 
+line 19, used a closing tag: </li> to try and open a list item
+line 24, not sure if this counts but once again different tag than opening of list. should be </ol>
+line 26, didn't close paragraph tag
+line 27, should have alt text for image. Also uncapitalize the i in Image so it knows what file to grab
+line 29, change </img> to the closing a tag </a>
+line 29, probably should put this in a <p></p> tag so it doesn't go on the right side of the image
+line 38, didn't close td tag. need </td>
+line 44, need to close table tag
+line 45, should be src not source ALSO its .jpg not .jpeg
+line 47, should be put in a <p> tag
+line 47, need proper tags <s>strikethrough text</s> 
+line 49, use inline css: <p style="background-color: lightgray;">Text</p>. bgcolor is not a thing
+line 51, we haven't learned java script yet, but you probably want your button to do something with onclick: onclick="alert('Button clicked!');"
+line 53, close comment with -->
+line 55, didn't close a tag, need </a>
+line 57, fix order of tags to:     <p><em>Underlined text</em></p> also should use <u> not <em> for underlined text
+line 60 and 61, these are the wrong tags for this kind of list
+line 62, need closing h2 tag </h2>
+line 63, pick either h3 or h2. I like h2
+
+<<<<<<<<find_errors_2>>>>>>>>
+
+move html tag from line 6 to line 2. 
+use line 6 to close head tag
+move the h1 ourside of the head. Nothing should be displayed in the head
+line 7, need to add closing brace to body tag. <body>
+line 10, need closing strong tag.
+line 10, need closing paragraph tag: </p>
+line 12, should be the image src not href
+line 12, Forgot the underscore in image_2.jpg
+line 12, img needs alt text
+line 14, need to open h2 tag. <h2>
+line 16, need opening paragraph tag. 
+line 17, need to use <!-- --> to make it a real comment.
+need to close the div tag on line 9 at some point. 
+need to close body tag with </body>
+last line, misspelled html closing tag
+
+Would also like to mention that the formating needed some work here, but that's not really an error. 
