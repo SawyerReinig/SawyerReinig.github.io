@@ -1,0 +1,73 @@
+
+  body {
+    margin: 0;
+  }
+  
+  html {
+    font-family: 'Helvetica neue', Arial, 'sans serif';
+    font-size: 10px;
+    background-color: #ccc;
+  }
+  h2{
+    font-size: 2em; 
+    line-height: 1.5em;
+    color: black;
+  }
+      
+img{
+  width: 50%;
+  display: block;
+
+}
+
+.image-container {
+  position: relative; /* This makes the container the positioning context for the overlay */
+  width: 50%; /* Adjust to fit the container width */
+  margin: 0 auto; /* Center the container */
+}
+
+.background-image {
+  width: 130%; /* Ensures the background image fits the container */
+}
+
+#overlay {
+  position: absolute; /* Position the overlay relative to the container */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; 
+  /* background-color: rgba(0, 0, 0, 0.5); */
+  display: flex;
+  justify-content: left;
+  align-items:last baseline;
+}
+
+#overlay .score-table {
+  position: absolute;
+  top: 10px; /* Position the h1 element at the top */
+  color: red;
+  font-size: 2em;
+  text-align: left;
+  width: 30%;
+  margin: 1em;
+  background-color: beige;
+  border-radius: 10px; /* Optional: adds rounded corners */
+
+}
+
+#overlay img {
+  width: 33%; /* Adjust size of the overlay image as needed */
+}
+
+
+.text-overlay {
+  position: absolute;
+  bottom: 2px; /* Position the text over the commentator image */
+  left: 2px; /* Adjust as needed */
+  color: yellow;
+  font-size: 2em;
+  font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.7); /* Optional: semi-transparent background for text */
+  padding: 10px;
+  border-radius: 5px; /* Optional: adds rounded corners */
+}
