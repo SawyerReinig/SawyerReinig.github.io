@@ -10,9 +10,17 @@ body {
     background-position: center;
     background-attachment: fixed; /*Fixes the background while scrolling */
     color: white;
+    display: flex;
+
+    /* align-items: center;  */
+    /* justify-content: center;  */
 
     
 }
+/* .centered {
+  width: 350px;
+} */
+
 #MainImage{
   width: 100%; /* Stretches the image across the full width of the page */
   height: auto; 
@@ -64,6 +72,8 @@ h1 {
   padding-left: 20px; 
   font-size: 35px;
 }
+
+
 
 footer {
   padding: 15px 50px;
