@@ -1,0 +1,89 @@
+
+body {
+  background-color: white;
+  color: black;
+  transition: background-color 0.3s, color 0.3s; /* Smooth transition */
+}
+
+h1 {
+  font-family: playfair;
+}
+
+
+.dark-mode body {
+  background-color: black;
+  color: white;
+}
+
+.carousel {
+  width: 30%; /* Set the width of the carousel */
+  margin: 0 auto; /* Center the carousel */
+  /* overflow: hidden;  */
+  position: relative;
+
+}
+
+.carousel-inner {
+  width: 100%; /* Full width for inner container */
+}
+
+.carousel .item {
+  height: 400px; /* Fixed height for each carousel item */
+}
+
+.carousel .item img {
+  width: 100%;
+  height: 100%; /* Force image to fill the carousel height */
+  object-fit: cover; /* Crop the image to cover the carousel container */
+  object-position: center; /* Center the image within the container */
+}
+
+.carousel-indicators {
+  position: absolute;
+  /* bottom: -60px; */
+  display: flex;
+  justify-content: center;
+  gap: 5px; /* Space between thumbnails */
+}
+
+.carousel-indicators li {
+  width: 60px; /* Width of thumbnail */
+  height: 40px; /* Height of thumbnail */
+  margin: 5px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.carousel-indicators li.active img {
+  opacity: 1;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+}
+
+.carousel-indicators img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9px;
+  /* left: 50%;
+  transform: translateX(-50%); */
+  display: flex;
+  justify-content: center;
+}
+
+
+
+.dark-mode .carousel-indicators li.active {
+  border: 2px solid white; /* White border in dark mode */
+}
+
+.toggle-container {
+  text-align: center;
+  margin: 20px 0;
+}
+
+#themeToggle {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
