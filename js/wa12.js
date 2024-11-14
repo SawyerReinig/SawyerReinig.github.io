@@ -1,30 +1,50 @@
 // catfact.ninja/fact
-const paragraph = document.getElementById('ResponseParagraph');
+const jokeTitle = document.getElementById('jokeTitle');
+const jokeImg = document.getElementById('jokeImg');
+const jokeDate = document.getElementById('jokeDate');
+const jokeContent = document.getElementById('jokeContent');
+
+// correctly replace the alt text for the image with the alt text provided by the API
+// display the title of the comic above the image
+// display the date the comic was published below the image
+// all of these elements should change when a button is pressed
 
 
-let Catfact = {}; 
 let Joke = {}; 
 
-function catfact(){
-fetch('https://catfact.ninja/fact')
-  .then(res =>{ 
-    if(res.ok){
-      return res.json(); 
-      // Catfact = res.json(); 
-    }else{
-      console.log(res);
-      throw new error('Bad response or network error')
-    }
-    }).then(data => {
-      Catfact = data; 
-      console.log(Catfact.fact);
-      setParagraphText(Catfact.fact); 
-      return(Catfact); 
-    })
-    .catch(error => {console.log(error)})
+  function XKCDJoke(){
+    var comicnumber = Math.floor(Math.random() * 100) +1;
+    fetch(`https://corsproxy.io/?https://xkcd.com/${comicnumber}/info.0.json`)
+      .then(res =>{ 
+        if(res.ok){
+          return res.json(); 
+        }else{
+          console.log(res);
+          throw new error('Bad response or network error')
+        }
+        }).then(data => {
+          Joke = data; 
+          console.log(Joke); //this is the good stuff
+          // here we will set the info for the page based on the json. 
+          jokeTitle.textContent = Joke.title; 
+          // jokeContent.textContent = Joke.transcript;
+          jokeImg.src = Joke.img; 
+          jokeImg.alt = Joke.alt; 
+          jokeDate.textContent = `This joke was estabolished:${Joke.day}/${Joke.month}/${Joke.year}`;
+          return(Joke); 
 
-  // console.log(Catfact); 
+        })
+        .catch(error => {console.log(error)})    
+      }
+
+  function setParagraphText(text){
+    paragraph.textContent = text; 
   }
+
+  XKCDJoke(); 
+
+
+
 
 
 
@@ -46,10 +66,3 @@ fetch('https://catfact.ninja/fact')
         })
         .catch(error => {console.log(error)})    
       }
-
-  function setParagraphText(text){
-    paragraph.textContent = text; 
-  }
-
-  // catfact(); 
-  GetJoke(); 
