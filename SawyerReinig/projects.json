@@ -1,0 +1,38 @@
+[
+    {
+        "title": "Project One",
+        "description": "A brief description of Project One.",
+        "image": "ProjectImgs/ProfilePic.JPG",
+        "tags": ["Python", "AI"],
+        "link": "url_to_project"
+    },
+    {
+        "title": "Project Two",
+        "description": "A brief description of Project Two.",
+        "image": "ProjectImgs/ProfilePic.JPG",
+        "tags": ["JavaScript", "Web"],
+        "link": "url_to_project"
+    },
+    {
+        "title": "Project Three",
+        "description": "A brief description of Project Two.",
+        "image": "ProjectImgs/ProfilePic.JPG",
+        "tags": ["JavaScript", "Web"],
+        "link": "url_to_project"
+    },
+    {
+        "title": "Project Four",
+        "description": "Another Project",
+        "image": "ProjectImgs/MorningInAmerica.jpg",
+        "tags": ["JavaScript", "Web", "VR"],
+        "link": "url_to_project"
+    },
+    {
+        "title": "Project Five",
+        "description": "A brief description of Project Two.",
+        "image": "ProjectImgs/JonB.png",
+        "tags": ["JavaScript", "Web"],
+        "link": "url_to_project"
+    }
+    
+]
