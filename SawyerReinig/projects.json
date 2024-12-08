@@ -1,38 +1,87 @@
 [
     {
-        "title": "Project One",
-        "description": "A brief description of Project One.",
-        "image": "ProjectImgs/ProfilePic.JPG",
-        "tags": ["Python", "AI"],
-        "link": "url_to_project"
+        "title": "HopUp",
+        "description": "This is my first published VR game",
+        "longDescription": "Longdescription",
+        "image": "ProjectImgs//HopUp/hopup.webp",
+        "carouselImages": [
+        
+        ],
+        "tags": ["HopUp", "VR", "Quest"],
+        "link": "https://sidequestvr.com/app/22334/hopup"
     },
     {
-        "title": "Project Two",
-        "description": "A brief description of Project Two.",
-        "image": "ProjectImgs/ProfilePic.JPG",
-        "tags": ["JavaScript", "Web"],
-        "link": "url_to_project"
+        "title": "Model Rocket",
+        "description": "This was for the 2024 Meta Quest Hackathon",
+        "longDescription": "Longdescription",
+        "carouselImages": [
+       
+        ],
+
+        "image": "ProjectImgs/ModelRocket/rocket.png",
+        "tags": ["MR", "VR"],
+        "link": "https://devpost.com/software/home-rocket"
     },
     {
-        "title": "Project Three",
-        "description": "A brief description of Project Two.",
-        "image": "ProjectImgs/ProfilePic.JPG",
-        "tags": ["JavaScript", "Web"],
-        "link": "url_to_project"
+        "title": "RoundNet VR",
+        "description": "Recreation of Spikeball in VR with P2P multiplayer",
+        "longDescription": "Longdescription",
+        "carouselImages": [
+   
+        ],
+        "image": "ProjectImgs/Roundnet/Roundnet.png",
+        "tags": ["Networking", "P2P", "VR", "Multiplayer", "Physics"],
+        "link": "https://roundnetvr.com/"
     },
     {
-        "title": "Project Four",
-        "description": "Another Project",
-        "image": "ProjectImgs/MorningInAmerica.jpg",
-        "tags": ["JavaScript", "Web", "VR"],
-        "link": "url_to_project"
+        "title": "Dream Mesh Party",
+        "description": "Combined AI 3d model generation in MR with multiplayer using Photon and spacial anchors",
+        "longDescription": "Developing an interactive, collaborative mixed reality(MR) experience typically requires professional skills, even at the prototype stage. In this paper, we present DreamPortal, a mixed reality application integrated with generative AI pipelines that convert speech into virtual objects and support multiuser interaction. We also integrate a Large Language Model(LLM) to automate reasoning about the interaction functions within generated objects and physical scenes.",
+        "image": "ProjectImgs/Dreammesh/Dreammesh.png",
+        "carouselImages": [
+            "ProjectImgs/Dreammesh/Dreamparty1.png",
+            "ProjectImgs/Dreammesh/Dreammesh.png",
+            "ProjectImgs/Dreammesh/Guitar.png"
+        ],
+        "tags": ["AI", "Python", "VR", "Research", "MR"],
+        "link": "project.html"
     },
     {
-        "title": "Project Five",
-        "description": "A brief description of Project Two.",
-        "image": "ProjectImgs/JonB.png",
-        "tags": ["JavaScript", "Web"],
-        "link": "url_to_project"
+        "title": "Superhot in OpenGL",
+        "description": "Created my own character animation system in OpenGL",
+        "longDescription": "Created my own version of the object loader which handles colored vertices. Used blender to fix a crappy internet model, and colored each vertex so I could tell what limb each vertex belonged to. Gathered points of rotation for each limb. Used my own vector math to align the mesh bodyparts with the bones I created from my motion capture CSV. ",
+        "image": "ProjectImgs/SuperhotGL/SuperHotGL.png",
+        "carouselImages": [
+            "ProjectImgs/SuperhotGL/Bones.png",
+            "ProjectImgs/SuperhotGL/SuperHotGL.png"
+        ],
+        "tags": ["OpenGL", "GL", "SuperHot", "Animation"],
+        "link": "project.html"
+    },
+    {
+        "title": "Network Systems",
+        "description": "Created my own TCP from UDP, C based webserver, Proxy, and DFS",
+        "longDescription": "These were the assignments I did in my network systems class. I created my own TCP from UDP using acknowledgement packets. Created a basic webserver that responds to get requests by sending back the requested file. Assignment 3 was a basic http proxy server, that would forward get requests to a server and cache the responses. Lastly I made a Distributed File Server (DFS) that would store sections of a file on multiple servers. Then when a user requested a certain file, all the chunks would be sent back so the user could put it back together. ",
+        "image": "ProjectImgs/Netsys/Netsys.png",
+        "carouselImages": [
+            "ProjectImgs/Netsys/udp-tcp.webp",
+            "ProjectImgs/Netsys/webserver.png",
+            "ProjectImgs/Netsys/proxy.jpeg",
+            "ProjectImgs/Netsys/DFS.webp"
+        ],
+        "tags": ["Network", "Website", "Proxy", "TCP", "UDP", "DFS"],
+        "link": "project.html"
+    },
+    {
+        "title": "Hololens Construction",
+        "description": "Managed and Improved the AR Construction Project for the BAIC lab",
+        "longDescription": "This was my main project at the BAIC lab. I was in charge of fixing the AR model for a study on the effectiveness of using AR as an alternative to blueprints. The paper for this project is currently under construction.",
+        "image": "ProjectImgs/HololensBAIC/NSF.png",
+        "carouselImages": [
+            "ProjectImgs/HololensBAIC/NSF.png"
+        ],
+        "tags": ["AR", "Hololens", "NSF", "Research"],
+        "link": "project.html"
     }
     
 ]

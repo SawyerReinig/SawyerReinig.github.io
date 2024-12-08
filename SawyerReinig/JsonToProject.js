@@ -17,11 +17,17 @@ fetch('projects.json')
                 card.innerHTML = `
                     <div class="card-image">
                         <img src="${project.image}" alt="${project.title}">
-                        <div class="overlay">${project.description}</div>
+                        <a href="${project.link.startsWith('project.html') ? `${project.link}?title=${encodeURIComponent(project.title)}` : project.link}" 
+                        ${project.link.startsWith('project.html') ? '' : 'target="_blank'}">
+                            <div class="overlay">${project.description}</div>
+                        </a>
                     </div>
                     <div class="card-info">
                         <h2>${project.title}</h2>
-                        <a href="${project.link}" target="_blank">View Project</a>
+                        <a href="${project.link.startsWith('project.html') ? `${project.link}?title=${encodeURIComponent(project.title)}` : project.link}" 
+                        ${project.link.startsWith('project.html') ? '' : 'target="_blank'}">
+                        View Project
+                        </a>
                     </div>
                 `;
                 projectContainer.appendChild(card);
