@@ -41,7 +41,9 @@
         "carouselImages": [
             "ProjectImgs/Dreammesh/Dreamparty1.png",
             "ProjectImgs/Dreammesh/Dreammesh.png",
-            "ProjectImgs/Dreammesh/Guitar.png"
+            "ProjectImgs/Dreammesh/Guitar.png",
+            "ProjectImgs/Dreammesh/RealityShowcase.jpg"
+
         ],
         "tags": ["AI", "Python", "VR", "Research", "MR"],
         "link": "project.html"
