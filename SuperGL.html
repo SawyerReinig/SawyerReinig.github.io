@@ -1,0 +1,1354 @@
+<html>
+<head>
+<title>My Own Superhot Inspired Character in WebGL.</title>
+
+
+
+<!--
+  Mat4 class
+  -->
+<script src="mat4.js" type="text/javascript"></script>
+
+<!--
+  Vertex shader
+  -->
+<script id="shader-vs" type="x-shader/x-vertex"> 
+   precision highp float;
+   attribute vec3 XYZ;
+   attribute vec3 RGB;
+   attribute vec2 T2D;
+   attribute vec3 aNormal; 
+   uniform mat4 ProjectionMatrix;
+   uniform mat4 ModelviewMatrix;
+   uniform mat4 bodyPartRotation; 
+   varying vec3 col;
+   varying vec2 t2d;
+   void main(void)
+   {
+      col = RGB;
+      t2d = T2D;
+      gl_PointSize = 2.0;  // Set point size
+      gl_Position = ProjectionMatrix * ModelviewMatrix * bodyPartRotation * vec4(XYZ,1);
+   }
+</script> 
+ 
+<!--
+  Fragment shader
+  -->
+<script id="shader-fs" type="x-shader/x-fragment"> 
+precision highp float;
+varying vec3 col;
+varying vec2 t2d;
+uniform sampler2D tex;
+void main(void)
+{
+   gl_FragColor = vec4(col,1)*texture2D(tex,t2d);
+}
+</script> 
+
+<!--
+  WebGL program
+  -->
+<script type="text/javascript"> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// SETTING UP THE GLOBAL VARIABLES FOR ANIMATION
+var worldSize = 2.5;
+const MAX_FRAMES = 1000;
+const MAX_VERTICES = 10000;  // Example maximum vertices
+const MAX_NORMALS = 10000;   // Example maximum normals
+// Mutable Variables
+let t = 0;
+
+let move = 1;        // Move light
+let th = 70;         // Azimuth of view angle
+let ph = 20;         // Elevation of view angle
+let axes = 0;        // Display axes
+let PerspectiveMode = 2;  // What to display
+let fov = 50;        // Field of view (for perspective)
+let asp = 1;         // Aspect ratio
+let dim = 3.0;       // Size of world
+let Ex, Ey, Ez;      // Camera eye position
+
+// Camera Properties
+let posX = -1.7, posY = 0.5, posZ = 0.67;   // Camera position
+let dirX = 0.9, dirY = -0.14, dirZ = -0.45; // Camera direction
+let angle = 1.1;     // Horizontal rotation angle
+let pitch = -0.15;   // Vertical rotation angle
+let speed = 0.1;     // Movement speed
+
+// Lighting Variables
+let light = 1;       // Lighting enabled/disabled
+let one = 1;         // Unit value
+let distance = 5;    // Light distance
+let inc = 10;        // Ball increment
+let smooth = 1;      // Smooth/Flat shading
+let local = 0;       // Local viewer model
+let emission = 0;    // Emission intensity (%)
+let ambient = 50;    // Ambient intensity (%)
+let diffuse = 60;    // Diffuse intensity (%)
+let specular = 100;  // Specular intensity (%)
+let spc = 1;         // Specular intensity
+let shininess = 64;  // Shininess (power of two)
+let shiny = 32;      // Shininess (value)
+let zh = -90;        // Light azimuth
+let ylight = 0.8;    // Elevation of light
+
+// Textures
+let texture = new Array(7);     // Texture IDs
+let SkyboxTextures = new Array(6); // Skybox textures
+let textureIndex = 0;
+
+// Animation Variables
+let currentFrame = 0;
+let frameRateDelay = 20; // Playback speed
+let AnimatePerson = 1;
+let frameCount = 1;
+
+// Model Scaling
+let SuperHotModel;
+let ObjScale = 0.5;
+
+// Colors
+let RGBA = [1, 1, 1, 1]; // Color array
+
+// Transformation Variables
+let whatToDraw = 2;
+
+// Object Data (for OBJ loader)
+let vertexCount = 0;
+// let normalCount = 0;
+let faceCount = 0;
+
+// Shader Programs
+let shader = [0, 0];
+
+
+let lastFrameTime = 0;
+const targetFPS = 60;
+const frameTime = 1000 / targetFPS; // ~33ms per frame
+
+
+var ProjectionMatrix = new mat4();
+
+
+
+
+
+//THESE ARE THE DATA STRUCTURES, CONVERTED FROM C TO WEBGL
+class Vector3 {
+    constructor(x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+}
+class Matrix4 {
+    constructor() {
+        this.m = new Float32Array(16);  // Column-major order
+    }
+}
+class BodyFrame {
+    constructor() {
+        this.overall = new Vector3();
+        this.overallRot = new Vector3();
+        this.head = new Vector3();
+        this.headRot = new Vector3();
+        this.leftShoulder = new Vector3();
+        this.leftShoulderRot = new Vector3();
+        this.rightShoulder = new Vector3();
+        this.rightShoulderRot = new Vector3();
+        this.leftHand = new Vector3();
+        this.leftHandRot = new Vector3();
+        this.rightHand = new Vector3();
+        this.rightHandRot = new Vector3();
+        this.leftElbow = new Vector3();
+        this.leftElbowRot = new Vector3();
+        this.rightElbow = new Vector3();
+        this.rightElbowRot = new Vector3();
+        this.leftFoot = new Vector3();
+        this.leftFootRot = new Vector3();
+        this.rightFoot = new Vector3();
+        this.rightFootRot = new Vector3();
+        this.leftKnee = new Vector3();
+        this.leftKneeRot = new Vector3();
+        this.rightKnee = new Vector3();
+        this.rightKneeRot = new Vector3();
+        this.leftHip = new Vector3();
+        this.leftHipRot = new Vector3();
+        this.rightHip = new Vector3();
+        this.rightHipRot = new Vector3();
+    }
+}
+class ObjVertex {
+    constructor(position = [0, 0, 0], color = [1, 1, 1]) {
+        this.position = position;
+        this.color = color;
+    }
+}
+class FaceDataIndex {
+    constructor() {
+        this.vertex = [0, 0, 0]; // Indices for vertices
+        this.normal = 0;         // Index for normal
+    }
+}
+
+
+//DATA TYPES THAT USED STRUCTS
+let motionData = new Array(MAX_FRAMES).fill(null).map(() => new BodyFrame());
+
+let vertices = new Array(MAX_VERTICES).fill(null).map(() => new ObjVertex([0, 0, 0], [1, 1, 1]));  
+// let normals = new Array(MAX_NORMALS).fill([0, 0, 0]);  
+let objDataIndices = new Array(MAX_NORMALS).fill(null).map(() => new FaceDataIndex());
+
+// Copies of vertex, normal, and face data
+let verticesCOPY = new Array(MAX_VERTICES).fill(null).map(() => new ObjVertex([0, 0, 0], [1, 1, 1]));  
+// let normalsCOPY = new Array(MAX_NORMALS).fill([0, 0, 0]);  
+let objDataIndicesCOPY = new Array(MAX_NORMALS).fill(null).map(() => new FaceDataIndex());
+
+// Arrays for transformations and bone data
+let bodyPartRotatePoints = new Array(14).fill(null).map(() => new Vector3(0, 0, 0));  
+let BoneManBoneVectors = new Array(10).fill(null).map(() => new Vector3(0, 0, 0));  
+let MeshManBoneVectors = new Array(10).fill(null).map(() => new Vector3(0, 0, 0));  
+
+// Matrices for bone transformations
+let BoneTransformationMatrices = new Array(10).fill(null).map(() => new Matrix4());  
+let bodypartTransformationMatricesForJoints = new Array(10).fill(null).map(() => new Matrix4());
+
+
+//THESE ARE THE HELPER MATH FUNCTIONS THAT I TRANSLATED FROM C
+function averageVector3(v1, v2) {
+    return new Vector3(
+        (v1.x + v2.x) / 2,
+        (v1.y + v2.y) / 2,
+        (v1.z + v2.z) / 2
+    );
+}
+// Function to calculate the distance between two points
+function distanceOfPoints(a, b) {
+    return Math.sqrt(
+        (b.x - a.x) * (b.x - a.x) + 
+        (b.y - a.y) * (b.y - a.y) + 
+        (b.z - a.z) * (b.z - a.z)
+    );
+}
+
+// Function to normalize a vector
+function normalize(v) {
+    let length = distanceOfPoints(new Vector3(0, 0, 0), v);
+    return new Vector3(v.x / length, v.y / length, v.z / length);
+}
+
+// Function to subtract two vectors
+function subtract(a, b) {
+    return new Vector3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+// Function to calculate the length of a vector
+function vectorLength(v) {
+    return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+// Function to scale a vector by a scalar
+function scale(v, scalar) {
+    return new Vector3(v.x * scalar, v.y * scalar, v.z * scalar);
+}
+
+// Function to perform component-wise multiplication of two vectors
+function multiplyVec(v1, v2) {
+    return new Vector3(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
+}
+
+// Function to compute the dot product of two vectors
+function dot(a, b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+// Function to compute the cross product of two vectors
+function cross(a, b) {
+    return new Vector3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+    );
+}
+
+// Identity Matrix
+function identityMatrix() {
+    let mat = new Matrix4();
+    mat.m.fill(0);
+    mat.m[0] = mat.m[5] = mat.m[10] = mat.m[15] = 1.0;
+    return mat;
+}
+
+// Print Matrix
+function printMatrix(mat) {
+    for (let i = 0; i < 4; i++) {
+        console.log(mat.m[i], mat.m[i + 4], mat.m[i + 8], mat.m[i + 12]);
+    }
+}
+
+// Print Vector3
+function printVector3(vector) {
+    console.log(`[${vector.x}, ${vector.y}, ${vector.z}]`);
+}
+
+// Transform one vector to another using a rotation matrix
+function transformVectorToVector(v1, v2) {
+    let from = normalize(v1);
+    let to = normalize(v2);
+
+    let axis = cross(from, to);
+    let angle = Math.acos(dot(from, to));
+
+    // If vectors are parallel, return the identity matrix
+    if (Math.abs(angle) < 1e-6) {
+        return identityMatrix();
+    }
+
+    axis = normalize(axis);
+    let c = Math.cos(angle);
+    let s = Math.sin(angle);
+    let t = 1 - c;
+
+    let rotation = new Matrix4();
+    rotation.m[0] = t * axis.x * axis.x + c;
+    rotation.m[1] = t * axis.x * axis.y + s * axis.z;
+    rotation.m[2] = t * axis.x * axis.z - s * axis.y;
+    rotation.m[3] = 0;
+
+    rotation.m[4] = t * axis.x * axis.y - s * axis.z;
+    rotation.m[5] = t * axis.y * axis.y + c;
+    rotation.m[6] = t * axis.y * axis.z + s * axis.x;
+    rotation.m[7] = 0;
+
+    rotation.m[8] = t * axis.x * axis.z + s * axis.y;
+    rotation.m[9] = t * axis.y * axis.z - s * axis.x;
+    rotation.m[10] = t * axis.z * axis.z + c;
+    rotation.m[11] = 0;
+
+    rotation.m[12] = 0;
+    rotation.m[13] = 0;
+    rotation.m[14] = 0;
+    rotation.m[15] = 1;
+
+    return rotation;
+}
+
+// Multiply a matrix by a vector
+function multiplyMatrixVector(matrix, vector) {
+    let x = vector.x;
+    let y = vector.y;
+    let z = vector.z;
+    let w = 1.0;
+
+    return new Vector3(
+        matrix.m[0] * x + matrix.m[4] * y + matrix.m[8] * z + matrix.m[12] * w,
+        matrix.m[1] * x + matrix.m[5] * y + matrix.m[9] * z + matrix.m[13] * w,
+        matrix.m[2] * x + matrix.m[6] * y + matrix.m[10] * z + matrix.m[14] * w
+    );
+}
+
+// Create a translation matrix
+function createTranslationMatrix(tx, ty, tz) {
+    let matrix = identityMatrix();
+    matrix.m[12] = tx;
+    matrix.m[13] = ty;
+    matrix.m[14] = tz;
+    return matrix;
+}
+
+// Create a scale matrix
+function createScaleMatrix(sx, sy, sz) {
+    let matrix = identityMatrix();
+    matrix.m[0] = sx;
+    matrix.m[5] = sy;
+    matrix.m[10] = sz;
+    return matrix;
+}
+
+// Create a rotation matrix around X axis
+function createRotationMatrixX(angle) {
+    let rad = (angle * Math.PI) / 180.0;
+    let matrix = identityMatrix();
+    matrix.m[5] = Math.cos(rad);
+    matrix.m[6] = -Math.sin(rad);
+    matrix.m[9] = Math.sin(rad);
+    matrix.m[10] = Math.cos(rad);
+    return matrix;
+}
+
+// Create a rotation matrix around Y axis
+function createRotationMatrixY(angle) {
+    let rad = (angle * Math.PI) / 180.0;
+    let matrix = identityMatrix();
+    matrix.m[0] = Math.cos(rad);
+    matrix.m[2] = Math.sin(rad);
+    matrix.m[8] = -Math.sin(rad);
+    matrix.m[10] = Math.cos(rad);
+    return matrix;
+}
+
+// Create a rotation matrix around Z axis
+function createRotationMatrixZ(angle) {
+    let rad = (angle * Math.PI) / 180.0;
+    let matrix = identityMatrix();
+    matrix.m[0] = Math.cos(rad);
+    matrix.m[1] = -Math.sin(rad);
+    matrix.m[4] = Math.sin(rad);
+    matrix.m[5] = Math.cos(rad);
+    return matrix;
+}
+
+// Multiply two matrices
+function multiplyMatrices(a, b) {
+    let result = identityMatrix();
+    for (let row = 0; row < 4; ++row) {
+        for (let col = 0; col < 4; ++col) {
+            result.m[row + col * 4] =
+                a.m[row] * b.m[col * 4] +
+                a.m[row + 4] * b.m[col * 4 + 1] +
+                a.m[row + 8] * b.m[col * 4 + 2] +
+                a.m[row + 12] * b.m[col * 4 + 3];
+        }
+    }
+    return result;
+}
+
+// Negate a vector
+function negateVector3(v) {
+    return new Vector3(-v.x, -v.y, -v.z);
+}
+
+function MatchesBodyPartColor(color) {
+    if (color[0] === 1.0 && color[1] === 0.0 && color[2] === 0.0) {
+        return 1; // Head
+    } else if (color[0] === 1.0 && color[1] === 1.0 && color[2] === 0.2) {
+        return 2; // Torso
+    } else if (color[0] === 0.2 && color[1] === 0.0 && color[2] === 1.0) {
+        return 3; // Left Upper Arm
+    } else if (color[0] === 0.0 && color[1] === 0.0 && color[2] === 1.0) {
+        return 4; // Left Forearm
+    } else if (color[0] === 0.2 && color[1] === 1.0 && color[2] === 0.0) {
+        return 5; // Right Upper Arm
+    } else if (color[0] === 0.0 && color[1] === 1.0 && color[2] === 0.0) {
+        return 6; // Right Forearm
+    } else if (color[0] === 1.0 && color[1] === 0.4 && color[2] === 1.0) {
+        return 7; // Left Leg Upper
+    } else if (color[0] === 1.0 && color[1] === 0.9 && color[2] === 1.0) {
+        return 8; // Left Leg Lower
+    } else if (color[0] === 1.0 && color[1] === 0.0 && color[2] === 1.0) {
+        return 9; // Right Leg Upper
+    } else if (color[0] === 1.0 && color[1] === 0.6 && color[2] === 1.0) {
+        return 10; // Right Leg Lower
+    } else {
+        return 0; // No match
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//THIS IS THE START OF THE SAWYER DEFINED FUNCTIONS
+function populateRotatePoints() {
+    bodyPartRotatePoints[0] = new Vector3(-0.0339, 3.5, 0.4728); // Head Rotation Position
+
+    // Left Arm
+    bodyPartRotatePoints[2] = new Vector3(0.85115, 2.8044, 0.29265);  // Left Upper Arm
+    bodyPartRotatePoints[3] = new Vector3(1.07624, 1.91877, 0.329963); // Left Lower Arm
+
+    // Right Arm
+    bodyPartRotatePoints[4] = new Vector3(-0.71292, 2.96523, 0.497993); // Right Upper Arm
+    bodyPartRotatePoints[5] = new Vector3(-1.02099, 2.08705, 0.502834); // Right Lower Arm
+
+    // Left Leg
+    bodyPartRotatePoints[6] = new Vector3(0.245658, 0.631263, 0.984649);  // Left Upper Leg
+    bodyPartRotatePoints[7] = new Vector3(0.392758, -1.11073, 1.19662);  // Left Lower Leg
+
+    // Right Leg
+    bodyPartRotatePoints[8] = new Vector3(-0.332425, 0.71882, 0.913496);  // Right Upper Leg
+    bodyPartRotatePoints[9] = new Vector3(-0.443468, -1.28511, 1.2823);  // Right Lower Leg
+
+    // Compute average of Left and Right Upper Leg positions
+    bodyPartRotatePoints[1] = averageVector3(bodyPartRotatePoints[6], bodyPartRotatePoints[8]);
+
+    // Hands and Feet
+    bodyPartRotatePoints[10] = new Vector3(0.372929, -3.1079, 1.36005);  // Left Hand
+    bodyPartRotatePoints[11] = new Vector3(-0.415594, -3.14632, 1.40471); // Right Hand
+    bodyPartRotatePoints[12] = new Vector3(1.12562, 0.835937, 0.575556);  // Left Foot
+    bodyPartRotatePoints[13] = new Vector3(-1.08507, 0.887655, 0.826123); // Right Foot
+}
+
+
+
+
+function populateBoneTransformationMatrices(frame) {
+    // console.log("Current Motion Data:", motionData[currentFrame]);
+    // console.log("Current Frame Data:", frame);
+    // Chest
+    let BoneManBoneVector_chest = subtract(
+        frame.head,
+        averageVector3(frame.leftHip, frame.rightHip)
+    );
+    let MeshManBoneVector_chest = subtract(bodyPartRotatePoints[0], bodyPartRotatePoints[1]);
+    BoneTransformationMatrices[1] = transformVectorToVector(MeshManBoneVector_chest, BoneManBoneVector_chest);
+
+    // Left Arm
+    let BoneManBoneVector_LeftUpperArm = subtract(frame.leftShoulder, frame.leftElbow);
+    let MeshManBoneVector_LeftUpperArm = subtract(bodyPartRotatePoints[2], bodyPartRotatePoints[3]);
+    BoneTransformationMatrices[2] = transformVectorToVector(MeshManBoneVector_LeftUpperArm, BoneManBoneVector_LeftUpperArm);
+
+    let BoneManBoneVector_LeftLowerArm = subtract(frame.leftElbow, frame.leftHand);
+    let MeshManBoneVector_LeftLowerArm = subtract(bodyPartRotatePoints[3], bodyPartRotatePoints[10]);
+    BoneTransformationMatrices[3] = transformVectorToVector(MeshManBoneVector_LeftLowerArm, BoneManBoneVector_LeftLowerArm);
+
+    // Right Arm
+    let BoneManBoneVector_RightUpperArm = subtract(frame.rightShoulder, frame.rightElbow);
+    let MeshManBoneVector_RightUpperArm = subtract(bodyPartRotatePoints[4], bodyPartRotatePoints[5]);
+    BoneTransformationMatrices[4] = transformVectorToVector(MeshManBoneVector_RightUpperArm, BoneManBoneVector_RightUpperArm);
+
+    let BoneManBoneVector_RightLowerArm = subtract(frame.rightElbow, frame.rightHand);
+    let MeshManBoneVector_RightLowerArm = subtract(bodyPartRotatePoints[5], bodyPartRotatePoints[11]);
+    BoneTransformationMatrices[5] = transformVectorToVector(MeshManBoneVector_RightLowerArm, BoneManBoneVector_RightLowerArm);
+
+    // Left Leg
+    let BoneManBoneVector_LeftUpperLeg = subtract(frame.leftHip, frame.leftKnee);
+    let MeshManBoneVector_LeftUpperLeg = subtract(bodyPartRotatePoints[6], bodyPartRotatePoints[7]);
+    BoneTransformationMatrices[6] = transformVectorToVector(MeshManBoneVector_LeftUpperLeg, BoneManBoneVector_LeftUpperLeg);
+
+    let BoneManBoneVector_LeftLowerLeg = subtract(frame.leftFoot, frame.leftKnee);
+    let MeshManBoneVector_LeftLowerLeg = subtract(bodyPartRotatePoints[7], bodyPartRotatePoints[12]);
+    BoneTransformationMatrices[7] = transformVectorToVector(MeshManBoneVector_LeftLowerLeg, BoneManBoneVector_LeftLowerLeg);
+
+    // Right Leg
+    let BoneManBoneVector_RightUpperLeg = subtract(frame.rightHip, frame.rightKnee);
+    let MeshManBoneVector_RightUpperLeg = subtract(bodyPartRotatePoints[8], bodyPartRotatePoints[9]);
+    BoneTransformationMatrices[8] = transformVectorToVector(MeshManBoneVector_RightUpperLeg, BoneManBoneVector_RightUpperLeg);
+
+    let BoneManBoneVector_RightLowerLeg = subtract(frame.rightFoot, frame.rightKnee);
+    let MeshManBoneVector_RightLowerLeg = subtract(bodyPartRotatePoints[9], bodyPartRotatePoints[13]);
+    BoneTransformationMatrices[9] = transformVectorToVector(MeshManBoneVector_RightLowerLeg, BoneManBoneVector_RightLowerLeg);
+}
+
+function copyObjData() {
+    // Copy vertices
+    for (let i = 0; i < vertexCount; i++) {
+        verticesCOPY[i] = new ObjVertex(
+            [...vertices[i].position],  // Copy position
+            [...vertices[i].color]      // Copy color
+        );
+    }
+
+    // Copy normals
+    // for (let i = 0; i < normalCount; i++) {
+    //     normalsCOPY[i] = [...normals[i]];  // Copy normal array
+    // }
+
+    // Copy face data indices
+    for (let i = 0; i < faceCount; i++) {
+        // objDataIndicesCOPY[i] = new FaceDataIndex();
+        objDataIndicesCOPY[i].vertex = [...objDataIndices[i].vertex];
+        // objDataIndicesCOPY[i].normal = objDataIndices[i].normal;
+    }
+}
+
+function applyMatrixToBodyPartCopyPoints(transformationMatrix, bodyPartId) {
+    for (let i = 0; i < vertexCount; i++) {
+        // Check if the vertex belongs to the body part
+        if (MatchesBodyPartColor(vertices[i].color) === bodyPartId) {
+            // Transform the vertex position
+            let originalPosition = new Vector3(
+                vertices[i].position[0],
+                vertices[i].position[1],
+                vertices[i].position[2]
+            );
+
+            let transformedPosition = multiplyMatrixVector(transformationMatrix, originalPosition);
+
+            // Update the position in the COPY
+            verticesCOPY[i].position[0] = transformedPosition.x;
+            verticesCOPY[i].position[1] = transformedPosition.y;
+            verticesCOPY[i].position[2] = transformedPosition.z;
+
+            
+        }
+    }
+}
+
+
+
+
+
+// Function to parse the OBJ file with color
+async function loadOBJWithColor(filename) {
+    try {
+        const response = await fetch(filename);
+        const text = await response.text();
+        const lines = text.split("\n");
+
+
+        for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith("v ")) { // Vertex line
+                if (vertexCount >= MAX_VERTICES) {
+                    console.error("Error: Exceeded maximum number of vertices.");
+                    break;
+                }
+
+                let parts = line.split(/\s+/);
+                let vertex = new ObjVertex(
+                    [parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3])],
+                    [parseFloat(parts[4]), parseFloat(parts[5]), parseFloat(parts[6])]
+                );
+                // let vertex = new ObjVertex(
+                //     [parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3])],
+                //     [0.9,0.1,0.1] //testing making all the vertices red
+                // );
+                vertices[vertexCount++] = vertex;
+
+            } 
+            else if (line.startsWith("f ")) { // Face line
+                let parts = line.split(/\s+/);
+                let vertexIndices = [];
+                // let normalIndex = null;
+
+                for (let i = 1; i <= 3; i++) { // Parsing three vertices per face
+                    let faceParts = parts[i].split("//");
+                    if (faceParts.length === 2) {
+                        vertexIndices.push(parseInt(faceParts[0]) - 1);
+                        // normalIndex = parseInt(faceParts[1]) - 1;
+                    } else {
+                        console.error("Error: Face line format not as expected.");
+                        continue;
+                    }
+                }
+
+                if (vertexIndices.length === 3) {
+                    // objDataIndices[faceCount] = new FaceDataIndex(); //not sure this need to go, but I beleive it is being initaliized up top. 
+                    objDataIndices[faceCount].vertex = vertexIndices;
+                    // objDataIndices[faceCount].normal = normalIndex;
+                    faceCount++;
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`Error loading file ${filename}: ${error}`);
+    }
+}
+
+
+function DrawObjWithPoints(gl, program) {
+    // Use the WebGL shader program
+    gl.useProgram(program);
+
+    // Create and bind a buffer for vertex positions
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+    // Flatten vertex positions into a single array
+    let vertexData = [];
+    for (let v_idx = 0; v_idx < vertexCount; v_idx++) {
+        vertexData.push(...vertices[v_idx].position);
+    }
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.STATIC_DRAW);
+
+    // Get and enable the position attribute
+    const positionLocation = gl.getAttribLocation(program, "XYZ");
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+    // Create and bind a buffer for vertex colors
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+    // Flatten color data into a single array
+    let colorData = [];
+    for (let v_idx = 0; v_idx < vertexCount; v_idx++) {
+        colorData.push(...vertices[v_idx].color);
+    }
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
+
+    // Get and enable the color attribute
+    const colorLocation = gl.getAttribLocation(program, "RGB");
+    gl.enableVertexAttribArray(colorLocation);
+    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
+    // Draw each vertex as a point
+    gl.drawArrays(gl.POINTS, 0, vertexCount);
+
+    // Disable attributes after drawing
+    gl.disableVertexAttribArray(positionLocation);
+    gl.disableVertexAttribArray(colorLocation);
+}
+
+function DrawBodyPartPoints(gl, program, bodyPartId) {
+    gl.useProgram(program);
+
+    const extraPointsPerEdge = 20; // Number of midpoints between two vertices
+
+    let vertexData = [];
+    let colorData = [];
+
+    let processedEdges = new Set(); // Tracks edges to avoid duplicate midpoints
+
+    for (let face = 0; face < faceCount; face++) {
+        let faceVertices = [];
+
+        for (let i = 0; i < 3; i++) {
+            let v_idx = objDataIndices[face].vertex[i] - 1;
+
+            if (v_idx < 0 || v_idx >= vertexCount) continue;
+
+            // Check if this vertex belongs to the given body part
+            if (MatchesBodyPartColor(vertices[v_idx].color) === bodyPartId) {
+                let originalPos = vertices[v_idx].position;
+                let originalColor = vertices[v_idx].position;
+                let elapsedTime = performance.now(); // Equivalent to `glutGet(GLUT_ELAPSED_TIME)`
+                currentFrame = Math.floor(elapsedTime / frameRateDelay) % frameCount;
+                if(currentFrame > 100 && currentFrame < 300){
+                    originalColor = [Math.random(), Math.random()/100, Math.random()/10];
+                }
+                else{
+                    let originalColor = vertices[v_idx].position;
+                }
+
+
+                // Add the original vertex
+                vertexData.push(...originalPos);
+                colorData.push(...originalColor);
+
+                faceVertices.push({ index: v_idx, position: originalPos, color: originalColor });
+            }
+        }
+
+        // **Ensure we only process faces that have 3 valid vertices**
+        if (faceVertices.length !== 3) continue;
+
+        // Generate midpoints along edges of the triangle
+        for (let i = 0; i < 3; i++) {
+            let v1 = faceVertices[i];
+            let v2 = faceVertices[(i + 1) % 3]; // Next vertex in the triangle
+
+            if (!v1 || !v2) continue; // Ensure both vertices are defined
+
+            // Create a unique edge identifier (avoiding duplicate edges)
+            let edgeKey = `${Math.min(v1.index, v2.index)}-${Math.max(v1.index, v2.index)}`;
+            if (processedEdges.has(edgeKey)) continue;
+            processedEdges.add(edgeKey);
+
+            // Generate evenly spaced midpoints
+            for (let j = 1; j <= extraPointsPerEdge; j++) {
+                let t = j / (extraPointsPerEdge + 1); // 1/3, 2/3 if extraPointsPerEdge = 2
+
+                let midPoint = [
+                    v1.position[0] + t * (v2.position[0] - v1.position[0]),
+                    v1.position[1] + t * (v2.position[1] - v1.position[1]),
+                    v1.position[2] + t * (v2.position[2] - v1.position[2])
+                ];
+
+                vertexData.push(...midPoint);
+                colorData.push(...v1.color); // Assign the color of the first vertex
+            }
+        }
+    }
+
+    if (vertexData.length === 0) {
+        console.warn(`No vertices found for body part ${bodyPartId}`);
+        return;
+    }
+
+    // Create and bind a buffer for vertex positions
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexData), gl.STATIC_DRAW);
+
+    const positionLocation = gl.getAttribLocation(program, "XYZ");
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+    // Create and bind a buffer for vertex colors
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
+
+    const colorLocation = gl.getAttribLocation(program, "RGB");
+    gl.enableVertexAttribArray(colorLocation);
+    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
+    // Set the point size (requires setting in vertex shader as well)
+    const pointSizeLocation = gl.getUniformLocation(program, "pointSize");
+    gl.uniform1f(pointSizeLocation, 5.0); // Adjust as needed
+
+    // Draw the body part and generated midpoints as points
+    gl.drawArrays(gl.POINTS, 0, vertexData.length / 3);
+
+    // Disable attributes
+    gl.disableVertexAttribArray(positionLocation);
+    gl.disableVertexAttribArray(colorLocation);
+}
+
+
+
+
+
+
+async function readMotionCaptureData(filename) {
+    try {
+        const response = await fetch(filename);
+        const text = await response.text();
+        const lines = text.split("\n");
+
+        if (lines.length < 2) {
+            console.error("File is empty or has no data.");
+            return;
+        }
+
+        let frameIndex = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+            if (frameIndex >= MAX_FRAMES) {
+                console.warn("Max frames limit reached.");
+                break;
+            }
+
+            let line = lines[i].trim();
+            if (line === "") continue;
+
+            let values = line.split(",").map(parseFloat);
+            if (values.length < 60) {
+                console.warn(`Skipping malformed line ${i + 1}`);
+                continue;
+            }
+
+            // Populate the pre-allocated global motionData array
+            let frame = motionData[frameIndex];
+            let index = 1; // Skip frame number
+
+            frame.overall = new Vector3(values[index++], values[index++], values[index++]);
+            frame.overallRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.head = new Vector3(values[index++], values[index++], values[index++]);
+            frame.headRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.leftShoulder = new Vector3(values[index++], values[index++], values[index++]);
+            frame.leftShoulderRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.rightShoulder = new Vector3(values[index++], values[index++], values[index++]);
+            frame.rightShoulderRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.leftHand = new Vector3(values[index++], values[index++], values[index++]);
+            frame.leftHandRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.rightHand = new Vector3(values[index++], values[index++], values[index++]);
+            frame.rightHandRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.leftElbow = new Vector3(values[index++], values[index++], values[index++]);
+            frame.leftElbowRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.rightElbow = new Vector3(values[index++], values[index++], values[index++]);
+            frame.rightElbowRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.leftFoot = new Vector3(values[index++], values[index++], values[index++]);
+            frame.leftFootRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.rightFoot = new Vector3(values[index++], values[index++], values[index++]);
+            frame.rightFootRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.leftKnee = new Vector3(values[index++], values[index++], values[index++]);
+            frame.leftKneeRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.rightKnee = new Vector3(values[index++], values[index++], values[index++]);
+            frame.rightKneeRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.leftHip = new Vector3(values[index++], values[index++], values[index++]);
+            frame.leftHipRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frame.rightHip = new Vector3(values[index++], values[index++], values[index++]);
+            frame.rightHipRot = new Vector3(values[index++], values[index++], values[index++]);
+
+            frameIndex++;
+            
+        }
+        frameCount = frameIndex; 
+        console.log("The frame index is" + frameCount); 
+        console.log(`Loaded ${frameIndex} frames into motionData`);
+    } catch (error) {
+        console.error(`Error loading motion capture file: ${error}`);
+    }
+}
+
+
+function ComputeBodyPartTransformMatrix(bodyPartIndex, position, rotation, matrix) {
+    // Initialize the transformation matrix as an identity matrix
+    let transformMatrix = identityMatrix();
+
+    // Translation to the body part position
+    let translationMatrix = createTranslationMatrix(position.x, position.y, position.z);
+    transformMatrix = multiplyMatrices(transformMatrix, translationMatrix);
+
+    // Apply rotations
+    if (bodyPartIndex === 1) {
+        // Rotations for the head (body part index 1)
+        let rotationX = createRotationMatrixX(rotation.x);
+        let rotationY = createRotationMatrixY(rotation.y);
+        let rotationZ = createRotationMatrixZ(rotation.z);
+        transformMatrix = multiplyMatrices(transformMatrix, rotationZ);
+        transformMatrix = multiplyMatrices(transformMatrix, rotationY);
+        transformMatrix = multiplyMatrices(transformMatrix, rotationX);
+    } else {
+        // Apply the special matrix for body parts other than the head
+        transformMatrix = multiplyMatrices(transformMatrix, matrix);
+    }
+
+    // Apply scaling
+    let scaleMatrix;
+    if (bodyPartIndex === 2) {
+        // Special scaling for the torso
+        scaleMatrix = createScaleMatrix(0.24, 0.24, 0.24);
+    } else {
+        // Default scaling for other body parts
+        scaleMatrix = createScaleMatrix(0.30, 0.30, 0.30);
+    }
+    transformMatrix = multiplyMatrices(transformMatrix, scaleMatrix);
+
+    // Translate back to the rotation origin of the body part
+    let negateRotationPoint = negateVector3(bodyPartRotatePoints[bodyPartIndex - 1]);
+    let backTranslationMatrix = createTranslationMatrix(negateRotationPoint.x, negateRotationPoint.y, negateRotationPoint.z);
+    transformMatrix = multiplyMatrices(transformMatrix, backTranslationMatrix);
+
+    return transformMatrix;
+}
+
+function DrawBodyPartWithTransform(gl, program, bodyPartIndex, position, rotation, matrix) {
+    // Compute the transformation matrix
+    let transformMatrix = ComputeBodyPartTransformMatrix(bodyPartIndex, position, rotation, matrix);
+
+    // Store the transformation for joint calculations
+    bodypartTransformationMatricesForJoints[bodyPartIndex - 1] = transformMatrix;
+
+    // Set shader program
+    gl.useProgram(program);
+
+
+    // Pass the transformation matrix to the shader
+    const modelViewMatrixLocation = gl.getUniformLocation(program, "bodyPartRotation");
+    gl.uniformMatrix4fv(modelViewMatrixLocation, false, transformMatrix.m);
+
+    // Draw the body part using points
+    DrawBodyPartPoints(gl, program, bodyPartIndex);
+    
+}
+
+
+
+function DrawAnimatedBody(gl, program) {
+    // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(program);
+
+    // Calculate the current animation frame
+    let elapsedTime = performance.now(); // Equivalent to `glutGet(GLUT_ELAPSED_TIME)`
+    currentFrame = Math.floor(elapsedTime / frameRateDelay) % frameCount;
+    // console.log(currentFrame); 
+    // Get the current motion capture frame
+    let frame = motionData[currentFrame];
+
+    // Compute transformation matrices for bones
+    populateBoneTransformationMatrices(frame);
+
+    // Identity matrix for the head
+    let identity = identityMatrix();
+
+    // Draw body parts with transformations
+    DrawBodyPartWithTransform(gl, program, 1, frame.head, frame.headRot, identity);
+    DrawBodyPartWithTransform(gl, program, 2, averageVector3(frame.leftHip, frame.rightHip), frame.headRot, BoneTransformationMatrices[1]);
+
+    DrawBodyPartWithTransform(gl, program, 3, frame.leftShoulder, frame.leftShoulderRot, BoneTransformationMatrices[2]);
+    DrawBodyPartWithTransform(gl, program, 4, frame.leftElbow, frame.leftElbowRot, BoneTransformationMatrices[3]);
+
+    DrawBodyPartWithTransform(gl, program, 5, frame.rightShoulder, frame.rightShoulderRot, BoneTransformationMatrices[4]);
+    DrawBodyPartWithTransform(gl, program, 6, frame.rightElbow, frame.rightElbowRot, BoneTransformationMatrices[5]);
+
+    DrawBodyPartWithTransform(gl, program, 7, frame.leftHip, frame.leftHipRot, BoneTransformationMatrices[6]);
+    DrawBodyPartWithTransform(gl, program, 8, frame.leftKnee, frame.leftKneeRot, BoneTransformationMatrices[7]);
+
+    DrawBodyPartWithTransform(gl, program, 9, frame.rightHip, frame.rightHipRot, BoneTransformationMatrices[8]);
+    DrawBodyPartWithTransform(gl, program, 10, frame.rightKnee, frame.rightKneeRot, BoneTransformationMatrices[9]);
+
+    // Apply transformation matrices to copied body part points
+    for (let i = 1; i <= 10; i++) {
+        applyMatrixToBodyPartCopyPoints(bodypartTransformationMatricesForJoints[i - 1], i);
+    }
+
+    // Request the next frame for continuous animation
+    // requestAnimationFrame(() => Display());
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//THIS IS THE START OF VLAKIES CODE
+
+//
+//  Compile a shader
+//
+function CompileShader(gl,id)
+{
+   //  Get shader by id
+   var src = document.getElementById(id);
+   //  Create shader based on type setting
+   var shader;
+   if (src.type == "x-shader/x-fragment")
+      shader = gl.createShader(gl.FRAGMENT_SHADER);
+   else if (src.type == "x-shader/x-vertex")
+      shader = gl.createShader(gl.VERTEX_SHADER);
+   else
+      return null;
+   //  Read source into str
+   var str = "";
+   var k = src.firstChild;
+   while (k)
+   {
+      if (k.nodeType == 3) str += k.textContent;
+      k = k.nextSibling;
+   }
+   gl.shaderSource(shader, str);
+   //  Compile the shader
+   gl.compileShader(shader);
+   //  Check for errors
+   if (gl.getShaderParameter(shader, gl.COMPILE_STATUS) == 0)
+      alert(gl.getShaderInfoLog(shader));
+   //  Return shader
+   return shader;
+}
+
+//
+//  Compile shader program
+//
+function CompileShaderProg(gl,vert,frag)
+{
+   //  Compile the program
+   var prog  = gl.createProgram();
+   gl.attachShader(prog , CompileShader(gl,vert));
+   gl.attachShader(prog , CompileShader(gl,frag));
+   gl.linkProgram(prog);
+   //  Check for errors
+   if (gl.getProgramParameter(prog, gl.LINK_STATUS) == 0)
+      alert(gl.getProgramInfoLog(prog));
+   //  Return program
+   return prog;
+}
+
+var gl,canvas;
+
+function webGLStart()
+{
+    readMotionCaptureData("MoCapData/HookJab60fps.csv").then(() => {
+        console.log("Motion data is now ready for animation.");
+    });
+    loadOBJWithColor("Objs/SuperHotColored.obj"); 
+    
+    copyObjData(); 
+    populateRotatePoints(); 
+   //  Set canvas
+   canvas = document.getElementById("canvas");
+   //  Select canvas size
+   var size = Math.min(window.innerWidth,window.innerHeight)-10;
+   canvas.width  = size;
+   canvas.height = size;
+   //  Start WebGL
+   if (!window.WebGLRenderingContext)
+   {
+      alert("Your browser does not support WebGL. See http://get.webgl.org");
+      return;
+   }
+   try
+   {
+      gl = canvas.getContext("experimental-webgl");
+   }
+   catch(e)
+   {}
+   if (!gl)
+   {
+      alert("Can't get WebGL");
+      return;
+   }
+
+   //  Set viewport to entire canvas
+   gl.viewport(0,0,size,size);
+
+   //  Load Shader
+   var prog = CompileShaderProg(gl,"shader-vs","shader-fs");
+
+   //  Set program
+   gl.useProgram(prog);
+
+   //  Set projection
+//    ProjectionMatrix.ortho(-2.5,+2.5,-2.5,+2.5,-2.5,+2.5);
+   ProjectionMatrix.ortho(-worldSize,+worldSize,-worldSize,+worldSize,-worldSize,+worldSize);
+//    ProjectionMatrix.perspective(fov, canvas.width / canvas.height, 0.1, 1000);
+   
+
+   //  Vertex array count
+   var n = 36;
+   //  Cube vertex, color and texture
+   var cube_data = 
+   [
+      -1,-1, 1,  1,0,0,   0,1,
+      +1,-1, 1,  1,0,0,   1,1,
+      -1,+1, 1,  1,0,0,   0,0,
+      -1,+1, 1,  1,0,0,   0,0,
+      +1,-1, 1,  1,0,0,   1,1,
+      +1,+1, 1,  1,0,0,   1,0,
+      +1,-1,-1,  0,0,1,   0,1,
+      -1,-1,-1,  0,0,1,   1,1,
+      +1,+1,-1,  0,0,1,   0,0,
+      +1,+1,-1,  0,0,1,   0,0,
+      -1,-1,-1,  0,0,1,   1,1,
+      -1,+1,-1,  0,0,1,   1,0,
+      +1,-1,+1,  1,1,0,   0,1,
+      +1,-1,-1,  1,1,0,   1,1,
+      +1,+1,+1,  1,1,0,   0,0,
+      +1,+1,+1,  1,1,0,   0,0,
+      +1,-1,-1,  1,1,0,   1,1,
+      +1,+1,-1,  1,1,0,   1,0,
+      -1,-1,-1,  0,1,0,   0,1,
+      -1,-1,+1,  0,1,0,   1,1,
+      -1,+1,-1,  0,1,0,   0,0,
+      -1,+1,-1,  0,1,0,   0,0,
+      -1,-1,+1,  0,1,0,   1,1,
+      -1,+1,+1,  0,1,0,   1,0,
+      -1,+1,+1,  0,1,1,   0,1,
+      +1,+1,+1,  0,1,1,   1,1,
+      -1,+1,-1,  0,1,1,   0,0,
+      -1,+1,-1,  0,1,1,   0,0,
+      +1,+1,+1,  0,1,1,   1,1,
+      +1,+1,-1,  0,1,1,   1,0,
+      -1,-1,-1,  1,0,1,   0,1,
+      +1,-1,-1,  1,0,1,   1,1,
+      -1,-1,+1,  1,0,1,   0,0,
+      -1,-1,+1,  1,0,1,   0,0,
+      +1,-1,-1,  1,0,1,   1,1,
+      +1,-1,+1,  1,0,1,   1,0,
+   ];
+   var cube = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER,cube);
+   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(cube_data),gl.STATIC_DRAW);
+
+   //  Set state to draw scene
+   gl.enable(gl.DEPTH_TEST);
+   gl.clearColor(0.8,0.8,0.8,1);
+   //  Mouse control variables
+   var x0 = y0 = move  = 0;
+   //  Rotation angles
+   var th = ph = 15;
+
+   //  Create and load pi texture
+   var tex = gl.createTexture();
+   var img = new Image();
+   img.src = 'pi.png';
+   img.onload = function()
+   {
+      gl.bindTexture(gl.TEXTURE_2D,tex);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,img);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      //  When loaded call Display() to refresh the screen
+      Display();
+   }
+
+   //  Draw scene the first time
+   Display();
+
+   //
+   //  Display the scene
+   //
+   function Display()
+   {
+      //  Clear the screen and Z buffer
+      gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+
+      // Compute modelview matrix
+      var ModelviewMatrix = new mat4();
+      ModelviewMatrix.rotate(ph,0,1,0);
+      ModelviewMatrix.rotate(th,1,0,0);
+
+      
+
+      // Set shader
+      gl.useProgram(prog);
+
+      //  Set projection and modelview matrixes
+      gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ProjectionMatrix") , false , ProjectionMatrix.getMat());
+      gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ModelviewMatrix")  , false , ModelviewMatrix.getMat());
+
+      //  Bind cube buffer
+      gl.bindBuffer(gl.ARRAY_BUFFER,cube);
+      //  Set up 3D vertex array
+      var XYZ = gl.getAttribLocation(prog,"XYZ");
+      gl.enableVertexAttribArray(XYZ);
+      gl.vertexAttribPointer(XYZ,3,gl.FLOAT,false,32,0);
+      //  Set up 3D color array
+      var RGB = gl.getAttribLocation(prog,"RGB");
+      gl.enableVertexAttribArray(RGB);
+      gl.vertexAttribPointer(RGB,3,gl.FLOAT,false,32,12);
+      //  Set up 2D texture array
+      var T2D = gl.getAttribLocation(prog,"T2D");
+      gl.enableVertexAttribArray(T2D);
+      gl.vertexAttribPointer(T2D,2,gl.FLOAT,false,32,24);
+
+      //  THIS IS WHERE THE DRAWING HAPPENS
+
+    //   gl.drawArrays(gl.TRIANGLES,0,n); //draw the cube
+    //   DrawObj(gl, prog);
+    DrawAnimatedBody(gl, prog, 1); 
+    // DrawObjWithPoints(gl, prog); 
+    // for (let i = 1; i < 11; i++) {
+        // DrawBodyPartPoints(gl, prog, i);
+    // }
+
+      //  Disable vertex arrays
+      gl.disableVertexAttribArray(XYZ);
+      gl.disableVertexAttribArray(RGB);
+      gl.disableVertexAttribArray(T2D);
+
+      //  Flush
+      gl.flush ();
+   }
+
+
+   function update() {
+        let now = performance.now();
+        
+        // Only update if enough time has passed
+        if (now - lastFrameTime >= frameTime) {
+            lastFrameTime = now;
+            Display(); // Call your Display function
+            
+        }
+
+        requestAnimationFrame(update); // Schedule next update
+    }
+
+    // Start the update loop
+    update();
+
+
+   //
+   //  Resize canvas
+   //
+   canvas.resize = function ()
+   {
+      var size = Math.min(window.innerWidth, window.innerHeight)-10;
+      canvas.width  = size;
+      canvas.height = size;
+      gl.viewport(0,0,size,size);
+      Display();
+   }
+
+   //
+   //  Mouse button pressed
+   //
+   canvas.onmousedown = function (ev)
+   {
+      move  = 1;
+      x0 = ev.clientX;
+      y0 = ev.clientY;
+   }
+
+
+
+
+   canvas.onwheel = function (ev) {
+    ev.preventDefault(); // Prevents scrolling the page
+    
+    // Adjust zoom or any other functionality
+    if (ev.deltaY < 0) {
+        console.log("Scrolling up (Zoom in)");
+        worldSize -= 0.1; 
+        fov -= 1; 
+    } else {
+        console.log("Scrolling down (Zoom out)");
+        worldSize += 0.1; 
+        fov += 1; 
+    }
+    ProjectionMatrix = new mat4();  // Reset to identity matrix
+    ProjectionMatrix.ortho(-worldSize,+worldSize,-worldSize,+worldSize,-worldSize,+worldSize);
+    // ProjectionMatrix.perspective(fov, canvas.width / canvas.height, 0.1, 100);
+
+
+
+    Display(); // Redraw scene
+};
+
+   //
+   //  Mouse button released
+   //
+   canvas.onmouseup = function (ev)
+   {
+      move  = 0;
+   }
+
+   //
+   //  Mouse movement
+   //
+   canvas.onmousemove = function (ev)
+   {
+      if (move==0) return;
+      //  Update angles
+      ph -= ev.clientX-x0;
+      th += ev.clientY-y0;
+      //  Store location
+      x0 = ev.clientX;
+      y0 = ev.clientY;
+      //  Redisplay
+      Display();
+   }
+}
+</script> 
+
+<!--
+  Web page
+  -->
+</head>
+
+<body onload="webGLStart();" onresize="canvas.resize();"> 
+
+   
+<H1>SuperHot 3rd Person</H1>
+<canvas id="canvas" width="500" height="500"></canvas> 
+</body>
+</html>

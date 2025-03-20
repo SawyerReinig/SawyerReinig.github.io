@@ -61,6 +61,18 @@
         "link": "project.html"
     },
     {
+        "title": "Superhot in WebGL",
+        "description": "I ported my own animation system from OpenGL to WebGL. ",
+        "longDescription": "Created my own version of the object loader which handles colored vertices. Used blender to fix a crappy internet model, and colored each vertex so I could tell what limb each vertex belonged to. Gathered points of rotation for each limb. Used my own vector math to align the mesh bodyparts with the bones I created from my motion capture CSV. ",
+        "image": "ProjectImgs/SuperWebGL/EvilGL.png",
+        "carouselImages": [
+            "ProjectImgs/SuperWebGL/GoodGuyGL.png",
+            "ProjectImgs/SuperWebGL/EvilGL.png"
+        ],
+        "tags": ["OpenGL", "GL", "SuperHot", "Animation", "WebGL"],
+        "link": "SuperGL.html"
+    },
+    {
         "title": "Network Systems",
         "description": "Created my own TCP from UDP, C based webserver, Proxy, and DFS",
         "longDescription": "These were the assignments I did in my network systems class. I created my own TCP from UDP using acknowledgement packets. Created a basic webserver that responds to get requests by sending back the requested file. Assignment 3 was a basic http proxy server, that would forward get requests to a server and cache the responses. Lastly I made a Distributed File Server (DFS) that would store sections of a file on multiple servers. Then when a user requested a certain file, all the chunks would be sent back so the user could put it back together. ",
